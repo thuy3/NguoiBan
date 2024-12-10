@@ -192,6 +192,59 @@ namespace HelloWorld
             return new SqlConnection(sCon);
         }
 
+        //phương thức gọi thủ tục lấy mã người bán mới
+        private string GetNewMaNB()
+        {
+            using (var con = GetConnection())
+            {
+                con.Open();
+                using (var cmd = new SqlCommand("spNew_MaNB", con))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    //Thêm tham số output để nhận mã NB mới
+                    var outputParam = new SqlParameter("@new_MaNB", SqlDbType.VarChar, 9)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+                    cmd.Parameters.Add(outputParam);
+
+                    cmd.ExecuteNonQuery();
+                    return outputParam.Value.ToString();
+                }
+            }
+        }
+
+        //phương thức thêm mới người bán
+        private void btnThem_Click(object sender, EventArgs e)
+        {
+            if (!ValidateForm()) return;
+
+            try
+            {
+                // Lấy mã người bán mới từ thủ tục
+                string newMaNB = GetNewMaNB();
+                txtMaNB.Text = newMaNB; // Hiển thị mã mới trong form (nếu cần)
+
+                string query = "INSERT INTO NguoiBan VALUES (@MaNB, @TenNB, @DiaChi)";
+                var parameters = new Dictionary<string, object>
+                {
+                    { "@MaNB", newMaNB },
+                    { "@TenNB", txtTenNB.Text },
+                    { "@DiaChi", txtDiaChi.Text }
+                };
+
+                ExecuteNonQuery(query, parameters);
+                MessageBox.Show("Thêm mới thành công!", "Thông báo");
+                ClearForm();
+                LoadData();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Thêm mới không thành công: " + ex.Message, "Thông báo lỗi");
+            }
+        }
+
+
         // Phương thức thực thi câu lệnh không trả về dữ liệu
         private void ExecuteNonQuery(string query, Dictionary<string, object> parameters)
         {
@@ -258,31 +311,7 @@ namespace HelloWorld
             }
         }
 
-        private void btnThem_Click(object sender, EventArgs e)
-        {
-            if (!ValidateForm()) return;
-
-            string query = "INSERT INTO NguoiBan VALUES (@MaNB, @TenNB, @DiaChi)";
-            var parameters = new Dictionary<string, object>
-            {
-                { "@MaNB", txtMaNB.Text },
-                { "@TenNB", txtTenNB.Text },
-                { "@DiaChi", txtDiaChi.Text }
-            };
-
-            try
-            {
-                ExecuteNonQuery(query, parameters);
-                MessageBox.Show("Thêm mới thành công!", "Thông báo");
-                ClearForm();
-                LoadData();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Thêm mới không thành công: " + ex.Message, "Thông báo lỗi");
-            }
-        }
-
+        
         private void btnCapNhat_Click(object sender, EventArgs e)
         {
             if (!ValidateForm()) return;
